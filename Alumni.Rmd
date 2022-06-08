@@ -13,7 +13,7 @@ Inputs {.sidebar}
 
 ```{r}
  textInput("enter_number", label = h3("Enter your number"), value = "", placeholder = NULL)
- * this code brings down Enter"
+# * this code brings down Enter"
 
 
 
