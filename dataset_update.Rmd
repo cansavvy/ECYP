@@ -34,7 +34,7 @@ Inputs {.sidebar}
 ```{r}
 Masterfile <- gsheet2tbl('https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408')
 #Delete a column
-Masterfile <- Masterfile[ -c(2,14,18)]
+Masterfile <- Masterfile[ -c(2)]
 
 #change column names
 names(Masterfile) [1] <- "Class Year"
