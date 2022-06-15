@@ -31,17 +31,11 @@ if (!("DT" %in% installed.packages())) {
 if (!("gsheet" %in% installed.packages())) {
   install.packages("gsheet")
 }
-
-library(dplyr)
+library(magrittr)
 library(readr)
-library(gsheet)
-library(tidyverse)
-library(ggplot2)
 library(datasets)
 library(data.table)
-library(gsheet)
 library(shiny)
-library(DT)
 ```
 
 Inputs {.sidebar}
@@ -56,32 +50,14 @@ textInput("enter_number", label = h3("Enter your number"), value = "", placehold
 sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
 # Read in sheet
-ecyp_db_org <- gsheet2tbl(sheet_url) %>%
+ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
+  data.frame() %>%
   dplyr::mutate_all(as.character)
 
 sheet_id <- googledrive::drive_get(id = sheet_url)$id
 
 # Delete a column
 ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
-
-# Change column names
-names(ecyp_db) <- c(
-  "Class_Year",
-  "Unique_Number",
-  "Full_Name",
-  "Address",
-  "City_State_Zip",
-  "Permanent_Telephone",
-  "Email",
-  "High_School",
-  "Hs_Grad_Year",
-  "College",
-  "College_Grad_Year",
-  "Grad_School",
-  "Grad_School_Year",
-  "LinkedIN",
-  "Employers"
-)
 
 ## changing numeric column to character
 ecyp_db <- ecyp_db %>%
@@ -129,7 +105,7 @@ observeEvent(toListen(), {
 
   sheet_id <- googledrive::drive_get(id = sheet_url)$id
 
-  ecyp_db_org <- gsheet2tbl(sheet_url) %>% dplyr::mutate_all(as.character)
+  ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>% dplyr::mutate_all(as.character)
   
   # Delete a column
   ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
@@ -137,6 +113,8 @@ observeEvent(toListen(), {
   ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), input$variable] <-
     ecyp_db[which(ecyp_db$Unique_Number == input$enter_number), input$variable] <-
     as.character(input$new_value)
+
+  ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), ]$Last_Updated <- as.character(Sys.time())
 
   googlesheets4::sheet_write(
     data = ecyp_db_org,
