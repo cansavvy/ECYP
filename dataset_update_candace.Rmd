@@ -27,14 +27,15 @@ library(data.table)
 library(gsheet)
 library(shiny)
 library(DT)
+library(googlesheets4)
 ```
 
-Inputs {.sidebar}
------------------------------------------------------------------------
+## Inputs {.sidebar}
+
 ```{r}
 Masterfile <- gsheet2tbl('https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408')
 #Delete a column
-Masterfile <- Masterfile[ -c(2)]
+Masterfile <- Masterfile[ -c(2,13,14,18)]
 
 #change column names
 names(Masterfile) [1] <- "Class Year"
@@ -47,16 +48,16 @@ names(Masterfile) [7] <- "Email"
 names(Masterfile) [8] <- "High School"
 names(Masterfile) [9] <- "Hs Grad Year"
 names(Masterfile) [10] <- "College"
-names(Masterfile) [11] <- "Grad Year"
-names(Masterfile) [12] <- "Degree Major"
-names(Masterfile) [13] <- "Grad School"
-names(Masterfile) [14] <- "Grad School Year"
-names(Masterfile) [15] <- "LinkedIN"
-names(Masterfile) [16] <- "Employers"
+names(Masterfile) [11] <- " College Grad Year"
+names(Masterfile) [12] <- "Grad School"
+names(Masterfile) [13] <- "Grad School Year"
+names(Masterfile) [14] <- "LinkedIN"
+names(Masterfile) [15] <- "Employers"
 ## make a variable list
 #variable_list <- names(Masterfile)[-2]
 ## pasting the unique number when typing it
 #names(variable_list) <- paste("Enter", names(Masterfile)[-2])
+
 
 ##changing numeric column to character
 Masterfile$Unique_Number <- as.character(Masterfile$Unique_Number)
@@ -65,9 +66,6 @@ Masterfile$`Class Year` <- as.character(Masterfile$`Class Year`)
 
 
 ```
-
-
-
 
 ```{r}
 textInput("enter_number", label = h3("Enter your number (Press enter)"), value = "", placeholder = NULL)
@@ -79,12 +77,26 @@ variable_list <- names(Masterfile)[-2]
 names(variable_list) <- paste("Enter", names(Masterfile)[-2])
 
 
-##trying to create and textoutput saying this below.
-
-#names(Masterfile) <-textOutput("WhEN Entering your unique number, remember to Push  Enter to access information", names(Masterfile)[-2])
-
 
 ##textinput. one for each column
+## i created an text input to make it where the user can create an text input when selecting a column
+
+
+#if(field = 'Full Name'){text_input ->'Full Name'}
+#if(field = 'Address'){text_input ->'Address'}
+#if(field = 'City State Zip'){text_input ->'City State Zip'}
+#if(field = 'Permanent Telephone'){text_input ->'Permanent Telephone'}
+#if(field = 'Email'){text_input ->'Email'}
+#if(field = 'High School'){text_input ->'High school'}
+#if(field = 'HS Grad Year'){text_input ->'HS Grad Year'}
+#if(field = 'College'){text_input ->'College'}
+#if(field = 'College Grad Year'){text_input ->'College Grad Year'}
+#if(field = 'Grad School'){text_input ->'Grad School'}
+#if(field = 'Grad School Year'){text_input ->'Grad School Year'}
+#if(field = 'LinkedIN'){text_input ->'LinkedIN'}
+#if(field = 'Employers'){text_input ->'Employers'}
+
+
 
 
 ##add action button.
@@ -116,10 +128,9 @@ renderUI({
 })
 ```
 
-
 ```{r}
-
-
+server <- function(nput, output, session) {
+  renderSurvey()
 
 
 ```
