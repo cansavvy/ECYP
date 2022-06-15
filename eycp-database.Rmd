@@ -104,24 +104,27 @@ selectInput("variable", "Choose which field to update Info:", colnames(ecyp_db)[
 
 renderUI({
   field_text <- names(variable_list)[[which(variable_list == input$variable)]]
-
-  textInput("new_value", label = h3("Enter the new value for ", field_text), placeholder = NULL)
+  basicPage(
+    textInput("new_value", label = h3("Enter the new value for ", field_text), placeholder = NULL), 
+    submitButton("Update Info", icon("fas fa-sync"))
+  )
+  
 })
 ```
 
 
 
 ```{r}
-
 toListen <- reactive({
   input$new_value
 })
 
 observeEvent(toListen(), {
-  
+
   if (is.null(input$new_value)) {
     return()
   }
+    
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
   sheet_id <- googledrive::drive_get(id = sheet_url)$id
@@ -133,7 +136,7 @@ observeEvent(toListen(), {
 
   ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), input$variable] <-
     ecyp_db[which(ecyp_db$Unique_Number == input$enter_number), input$variable] <-
-    as.character(input$enter_value)
+    as.character(input$new_value)
 
   googlesheets4::sheet_write(
     data = ecyp_db_org,
