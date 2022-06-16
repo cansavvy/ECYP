@@ -38,13 +38,6 @@ library(data.table)
 library(shiny)
 ```
 
-Inputs {.sidebar}
------------------------------------------------------------------------
-
-```{r}
-textInput("enter_number", label = h3("Enter your number"), value = "", placeholder = NULL)
-```
-
 ```{r}
 # Declare URL to spreadsheet
 sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
@@ -65,29 +58,34 @@ ecyp_db <- ecyp_db %>%
 
 variable_list <- names(ecyp_db)[-2]
 names(variable_list) <- names(ecyp_db)[-2]
+
+reactive_vals <- reactiveValues(data = ecyp_db)
 ```
 
-## Column
+Inputs {.sidebar}
+-----------------------------------------------------------------------
 
 ```{r}
-renderTable({
-  dplyr::filter(ecyp_db, Unique_Number == input$enter_number)
-})
-```
+textInput("enter_number", label = h4("Enter your number"), value = "", placeholder = NULL)
 
-```{r}
-selectInput("variable", "Choose which field to update Info:", colnames(ecyp_db)[-2])
+selectInput("variable", h4("Choose which field to update Info:"), colnames(ecyp_db)[-2])
 
 renderUI({
   field_text <- names(variable_list)[[which(variable_list == input$variable)]]
   basicPage(
-    textInput("new_value", label = h3("Enter the new value for ", field_text), placeholder = NULL), 
+    textInput("new_value", label = h4("Enter the new value for ", field_text), placeholder = NULL), 
     submitButton("Update Info", icon("fas fa-sync"))
   )
   
 })
 ```
 
+## Column
+
+```{r}
+#Load the reactive values into data table
+renderDataTable({dplyr::filter(reactive_vals$data, Unique_Number == input$enter_number)})
+```
 
 
 ```{r}
@@ -121,10 +119,7 @@ observeEvent(toListen(), {
     ss = sheet_id,
     sheet = "Master Spreadsheet"
   )
-  
-  renderTable({
-    dplyr::filter(ecyp_db, Unique_Number == input$enter_number)
-  })
+  reactive_vals <- reactiveValues(data = ecyp_db)
 })
 ```
 
