@@ -1,0 +1,131 @@
+---
+title: "ECYP Fellows and Alumni Database"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+# Install packages if needed
+if (!("dplyr" %in% installed.packages())) {
+  install.packages("dplyr")
+}
+if (!("ggplot2" %in% installed.packages())) {
+  install.packages("ggplot2")
+}
+if (!("tidyverse" %in% installed.packages())) {
+  install.packages("tidyverse")
+}
+if (!("tidyr" %in% installed.packages())) {
+  install.packages("tidyr")
+}
+if (!("flexdashboard" %in% installed.packages())) {
+  install.packages("flexdashboard")
+}
+if (!("DT" %in% installed.packages())) {
+  install.packages("DT")
+}
+if (!("gsheet" %in% installed.packages())) {
+  install.packages("gsheet")
+}
+library(magrittr)
+library(readr)
+library(datasets)
+library(data.table)
+library(shiny)
+```
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+textInput("enter_number", label = h3("Enter your number"), value = "", placeholder = NULL)
+```
+
+```{r}
+# Declare URL to spreadsheet
+sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+# Read in sheet
+ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
+  data.frame() %>%
+  dplyr::mutate_all(as.character)
+
+sheet_id <- googledrive::drive_get(id = sheet_url)$id
+
+# Delete a column
+ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
+
+## changing numeric column to character
+ecyp_db <- ecyp_db %>%
+  dplyr::mutate_all(as.character)
+
+variable_list <- names(ecyp_db)[-2]
+names(variable_list) <- names(ecyp_db)[-2]
+```
+
+## Column
+
+```{r}
+renderTable({
+  dplyr::filter(ecyp_db, Unique_Number == input$enter_number)
+})
+```
+
+```{r}
+selectInput("variable", "Choose which field to update Info:", colnames(ecyp_db)[-2])
+
+renderUI({
+  field_text <- names(variable_list)[[which(variable_list == input$variable)]]
+  basicPage(
+    textInput("new_value", label = h3("Enter the new value for ", field_text), placeholder = NULL), 
+    submitButton("Update Info", icon("fas fa-sync"))
+  )
+  
+})
+```
+
+
+
+```{r}
+toListen <- reactive({
+  input$new_value
+})
+
+observeEvent(toListen(), {
+
+  if (is.null(input$new_value)) {
+    return()
+  }
+    
+  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+  sheet_id <- googledrive::drive_get(id = sheet_url)$id
+
+  ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>% dplyr::mutate_all(as.character)
+  
+  # Delete a column
+  ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
+
+  ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), input$variable] <-
+    ecyp_db[which(ecyp_db$Unique_Number == input$enter_number), input$variable] <-
+    as.character(input$new_value)
+
+  ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), ]$Last_Updated <- as.character(Sys.time())
+
+  googlesheets4::sheet_write(
+    data = ecyp_db_org,
+    ss = sheet_id,
+    sheet = "Master Spreadsheet"
+  )
+  
+  renderTable({
+    dplyr::filter(ecyp_db, Unique_Number == input$enter_number)
+  })
+})
+```
+
+
