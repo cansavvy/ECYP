@@ -32,29 +32,55 @@ if (!("gsheet" %in% installed.packages())) {
   install.packages("gsheet")
 }
 library(magrittr)
-library(readr)
-library(datasets)
-library(data.table)
 library(shiny)
 ```
 
+```{r input_demo, eval = FALSE}
+input <-list(
+  enter_number = NULL,
+  variable = NULL,
+  new_value = NULL
+  refreshed = FALSE
+)
+```
+
 ```{r}
-# Declare URL to spreadsheet
 sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
-# Read in sheet
-ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
-  data.frame() %>%
-  dplyr::mutate_all(as.character)
+get_sheet_id <- function(sheet_url) {
+  sheet_id <- googledrive::drive_get(id = sheet_url)$id
 
-sheet_id <- googledrive::drive_get(id = sheet_url)$id
+  return(sheet_id)
+}
 
-# Delete a column
-ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
+refresh_db <- function(sheet_url) {
 
-## changing numeric column to character
-ecyp_db <- ecyp_db %>%
-  dplyr::mutate_all(as.character)
+  # Read in sheet
+  ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
+    data.frame() %>%
+    dplyr::mutate_all(as.character)
+
+  return(ecyp_db_org)
+}
+
+refresh_table <- function(sheet_url) {
+  ecyp_db_org <- refresh_db(sheet_url)
+
+  # Delete a column
+  ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
+
+  ## changing numeric column to character
+  ecyp_db <- ecyp_db %>%
+    dplyr::mutate_all(as.character)
+
+  return(ecyp_db)
+}
+```
+
+```{r}
+sheet_id <- get_sheet_id(sheet_url)
+ecyp_db_org <- refresh_db(sheet_url)
+ecyp_db <- refresh_table(sheet_url)
 
 variable_list <- names(ecyp_db)[-2]
 names(variable_list) <- names(ecyp_db)[-2]
@@ -64,25 +90,23 @@ Inputs {.sidebar}
 -----------------------------------------------------------------------
 
 ```{r}
-textInput("enter_number", label = h4("Enter your number"), value = "", placeholder = NULL)
+textInput("enter_number", label = h4("Enter your number"), value = NULL)
 
 selectInput("variable",
   label = h4("Choose which field to update Info:"),
-  choices = colnames(ecyp_db)[-2]
+  choices = colnames(ecyp_db)[-2], 
+  selected = NULL
 )
 
-variable.choices <- reactive({
-  if (is.null(input$variable)) {
-    NULL
-  } else {
+variable.choice <- reactive({
+  if (!is.null(input$variable)) {
     names(variable_list)[[which(variable_list == input$variable)]]
   }
 })
 
 renderUI({
-  field_text <- names(variable_list)[[which(variable_list == input$variable)]]
   basicPage(
-    textInput("new_value", label = h4("Enter the new value for ", variable.choices()), placeholder = NULL),
+    textInput("new_value", label = h4("Enter the new value for ", variable.choice()), value = NULL),
     submitButton("Update Info", icon("fas fa-sync"))
   )
 })
@@ -91,36 +115,45 @@ renderUI({
 ## Column
 
 ```{r}
+ecyp_updated <- reactive(
+  if (!is.null(input$enter_number) || refreshed) {
+    refresh_table(sheet_url) %>% 
+      dplyr::filter(Unique_Number == input$enter_number)
+    refreshed <- FALSE
+  }
+)
+
 # Load the reactive values into data table
 renderDataTable({
-  dplyr::filter(reactive_vals$data, Unique_Number == input$enter_number)
+  ecyp_updated()
 })
 ```
 
 
 ```{r}
-toListen <- reactive({
-  input$new_value
-})
-
-observeEvent(toListen(), {
-  if (is.null(input$new_value)) {
+value_updated <- reactive(
+  if(!is.null(input$new_value)) {
+    input$new_value
+  } else {
     return()
   }
+)
 
+observeEvent(value_updated(), {
+  if (is.null(value_updated())) {
+    return()
+  }
+  if (is.null(variable.choice())) {
+    return()
+  }
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
-  sheet_id <- googledrive::drive_get(id = sheet_url)$id
+  sheet_id <- get_sheet_id(sheet_url)
+  ecyp_db_org <- refresh_db(sheet_url)
+  ecyp_db <- refresh_table(sheet_url)
 
-  ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>% 
-    dplyr::mutate_all(as.character)
-
-  # Delete a column
-  ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
-
-  ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), input$variable] <-
-    ecyp_db[which(ecyp_db$Unique_Number == input$enter_number), input$variable] <-
-    as.character(input$new_value)
+  ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), variable.choice()] <-
+    as.character(value_updated())
 
   ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), ]$Last_Updated <- as.character(Sys.time())
 
@@ -129,7 +162,8 @@ observeEvent(toListen(), {
     ss = sheet_id,
     sheet = "Master Spreadsheet"
   )
-  reactive_vals <- reactiveValues(data = ecyp_db)
+  
+  refreshed <- TRUE
 })
 ```
 
