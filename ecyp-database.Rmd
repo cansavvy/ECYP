@@ -42,7 +42,7 @@ library(shiny)
 
 ```{r input_demo, eval = FALSE}
 # For testing purposes
-input <-list(
+input <- list(
   enter_number = NULL,
   variable = NULL,
   new_value = NULL
@@ -59,7 +59,7 @@ get_sheet_id <- function(sheet_url) {
   return(sheet_id)
 }
 
-# This function reads the googlesheet from online 
+# This function reads the googlesheet from online
 refresh_db <- function(sheet_url) {
   # Read in sheet
   ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
@@ -74,7 +74,7 @@ refresh_table <- function(sheet_url) {
   ecyp_db_org <- refresh_db(sheet_url)
 
   # Delete a column
-  ecyp_db <- ecyp_db_org %>% 
+  ecyp_db <- ecyp_db_org %>%
     dplyr::select(-Name_Original, -Notes)
 
   return(ecyp_db)
@@ -96,7 +96,7 @@ Inputs {.sidebar}
 -----------------------------------------------------------------------
 
 ```{r}
-## Set up the user's input buttons 
+## Set up the user's input buttons
 
 # Have the user specify their ID number
 textInput("enter_number", label = h4("Enter your number"), value = NULL)
@@ -104,7 +104,7 @@ textInput("enter_number", label = h4("Enter your number"), value = NULL)
 # Have the user choose what variable from the table they want to change
 selectInput("variable",
   label = h4("Choose which field to update Info:"),
-  choices = variable_list, 
+  choices = variable_list,
   selected = NULL
 )
 
@@ -112,7 +112,7 @@ selectInput("variable",
 renderUI({
   basicPage(
     textInput("new_value", label = h4("Enter the new value for ", variable_choice()), value = NULL),
-    submitButton("Update Info", icon("fas fa-sync"))
+    actionButton("submit", "Update Info", icon("fas fa-sync"))
   )
 })
 ```
@@ -120,7 +120,7 @@ renderUI({
 ```{r}
 # Set up inputs to be reactive
 
-# This variable has the user's input for what their ID is. 
+# This variable has the user's input for what their ID is.
 enter_number <- reactive({
   if (!is.null(input$enter_number)) {
     input$enter_number
@@ -134,9 +134,9 @@ variable_choice <- reactive({
   }
 })
 
-# This variable has the users' input for what the new value will be 
+# This variable has the users' input for what the new value will be
 new_value <- reactive({
-  if (!is.null(input$new_value)) {
+  if (!is.null(input$submit)) {
     input$new_value
   }
 })
@@ -147,49 +147,52 @@ new_value <- reactive({
 ```{r, echo = F}
 # Set up the table to be rendered
 ecyp_updated <- reactive({
-  if (!is.null(enter_number())) {
-    refresh_table(sheet_url) %>% 
+  if (!is.null(input$submit)) {
+    sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+    sheet_id <- get_sheet_id(sheet_url)
+    ecyp_db_org <- refresh_db(sheet_url)
+    ecyp_db <- refresh_table(sheet_url)
+
+    ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), variable_choice()] <-
+      as.character(new_value())
+
+    ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
+
+    googlesheets4::sheet_write(
+      data = ecyp_db_org,
+      ss = sheet_id,
+      sheet = "Master Spreadsheet"
+    )
+    print("Refresh was run")
+  }
+  if (!is.null(enter_number()) || !is.null(input$submit)) {
+    refresh_table(sheet_url) %>%
       dplyr::filter(Unique_Number == enter_number())
   }
 })
 
-renderUI({ 
-  if (length(new_value()) > 0) {
+renderUI({
+  if (!is.null(input$submit)) {
     tableOutput("ecyp_table")
-  } 
+  }
 })
 
+DT::DTOutput("table")
+
 # Load the reactive values into data table
-renderTable({ecyp_updated()})
+output$table <- DT::renderDataTable({
+  ecyp_updated()
+})
 ```
 
 
 ```{r}
 # If a new value is given, we want to put write it in the main googlesheet underneath the given variable name
-observeEvent(new_value(), {
-  if (is.null(new_value())) {
-    return()
-  }
-  if (is.null(variable_choice())) {
-    return()
-  }
-  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-
-  sheet_id <- get_sheet_id(sheet_url)
-  ecyp_db_org <- refresh_db(sheet_url)
-  ecyp_db <- refresh_table(sheet_url)
-
-  ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), variable_choice()] <-
-    as.character(new_value())
-
-  ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
-
-  googlesheets4::sheet_write(
-    data = ecyp_db_org,
-    ss = sheet_id,
-    sheet = "Master Spreadsheet"
-  )
-
+observeEvent(input$submit, {
+  output$table <- DT::renderDT({
+    ecyp_updated()
+  })
 })
 ```
 
