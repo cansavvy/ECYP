@@ -5,9 +5,10 @@ account: c-savonen
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6507406
-bundleId: 6017967
+bundleId: 6018130
 url: https://c-savonen.shinyapps.io/ecyp-database/
-when: 1655485784.09818
-lastSyncTime: 1655485784.09819
+when: 1655489172.7589
+lastSyncTime: 1655489172.75891
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com

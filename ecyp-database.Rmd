@@ -5,6 +5,14 @@ output:
     orientation: columns
     source_code: embed
 runtime: shiny
+resource_files:
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
+- .secrets/986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- 986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
 ---
 
 ```{r}
@@ -21,6 +29,7 @@ library(gsheet)
 library(magrittr)
 library(shiny)
 library(googlesheets4)
+library(googledrive)
 ```
 
 ```{r input_demo, eval = FALSE}
@@ -144,18 +153,23 @@ ecyp_update <- reactive({
 
     ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
 
-    # Set authentication token to be stored in a folder called `.secrets`
-    options(gargle_oauth_cache = ".secrets")
-
-    # Authenticate manually
-    googlesheets4::gs4_auth()
-
-    # Check that the non-interactive authentication works by first deauthorizing:
-    googlesheets4::gs4_deauth()
-
-    # Authenticate using token. If no browser opens, the authentication works.
-    googlesheets4::gs4_auth(cache = ".secrets", email = "cansav09@gmail.com")
-
+    if (interactive()) {
+      googlesheets4::gs4_auth(
+        email = "cansav09@gmail.com",
+        path = NULL,
+        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
+        # Get new token if it doesn't exist
+        cache = ".",
+        use_oob = FALSE,
+        token = NULL
+      )
+    } else {
+      googlesheets4::gs4_auth(
+        email = "cansav09@gmail.com",
+        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
+        cache = "."
+      )
+    }
     googlesheets4::sheet_write(
       data = ecyp_db_org,
       ss = sheet_id,
