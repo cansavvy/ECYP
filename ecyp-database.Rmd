@@ -3,129 +3,235 @@ title: "ECYP Fellows and Alumni Database"
 output:
   flexdashboard::flex_dashboard:
     orientation: columns
-    social: menu
     source_code: embed
 runtime: shiny
+resource_files:
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
+- .secrets/986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- 986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
 ---
 
+```{r}
+# Purpose of this Rmd is to host a Shint app that allows alumni to use their unique ID to access their information in the
+# Alumni spreadsheet and be able to update that information
+```
+
 ```{r global, include=FALSE}
-# Install packages if needed
-if (!("dplyr" %in% installed.packages())) {
-  install.packages("dplyr")
-}
-if (!("ggplot2" %in% installed.packages())) {
-  install.packages("ggplot2")
-}
-if (!("tidyverse" %in% installed.packages())) {
-  install.packages("tidyverse")
-}
-if (!("tidyr" %in% installed.packages())) {
-  install.packages("tidyr")
-}
-if (!("flexdashboard" %in% installed.packages())) {
-  install.packages("flexdashboard")
-}
-if (!("DT" %in% installed.packages())) {
-  install.packages("DT")
-}
-if (!("gsheet" %in% installed.packages())) {
-  install.packages("gsheet")
-}
+library(tidyverse)
+library(ggplot2)
+library(flexdashboard)
+library(DT)
+library(gsheet)
 library(magrittr)
-library(readr)
-library(datasets)
-library(data.table)
 library(shiny)
+library(googlesheets4)
+library(googledrive)
+```
+
+```{r input_demo, eval = FALSE}
+# For testing purposes
+input <- list(
+  enter_number = NULL,
+  variable = NULL,
+  new_value = NULL,
+  submit = NULL
+)
+```
+
+
+```{r}
+# This function gets the sheet_id from the url provided
+get_sheet_id <- function(sheet_url) {
+  # This is the hard-coded in url to the Alumni Master File that the data is kept in.
+  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+  sheet_id <- googledrive::drive_get(id = sheet_url)$id
+  return(sheet_id)
+}
+
+# This function reads the googlesheet from online
+refresh_db <- function(sheet_url) {
+  # This is the hard-coded in url to the Alumni Master File that the data is kept in.
+  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+  # Read in sheet
+  ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
+    data.frame() %>%
+    dplyr::mutate_all(as.character)
+
+  return(ecyp_db_org)
+}
+
+# This function takes the googlesheet and sets up the table the user will see
+refresh_table <- function(sheet_url) {
+  # This is the hard-coded in url to the Alumni Master File that the data is kept in.
+  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+  ecyp_db_org <- refresh_db(sheet_url)
+
+  # Delete a column
+  ecyp_db <- ecyp_db_org %>%
+    dplyr::select(-Name_Original, -Notes)
+
+  return(ecyp_db)
+}
+```
+
+```{r}
+# Set up inputs to be reactive functions
+# This variable has the user's input for what their ID is.
+enter_number <- reactive({
+  if (!is.null(input$enter_number)) {
+    input$enter_number
+  }
+})
+
+# This variable has the users' input for what variable they'd like to change
+variable_choice <- reactive({
+  if (input$variable != "---") {
+    return(input$variable)
+  } else {
+    return("---")
+  }
+})
+
+# This variable has the users' input for what the new value will be
+new_value <- reactive({
+  if (!is.null(input$submit) && input$submit > 0) {
+    input$new_value
+  }
+})
 ```
 
 Inputs {.sidebar}
 -----------------------------------------------------------------------
 
 ```{r}
-textInput("enter_number", label = h3("Enter your number"), value = "", placeholder = NULL)
-```
+## Set up the user's input buttons
+uiOutput("UI")
 
-```{r}
-# Declare URL to spreadsheet
-sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+# Have the user write in the new value and click submit when they are done
+output$UI <- renderUI({
+  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
-# Read in sheet
-ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
-  data.frame() %>%
-  dplyr::mutate_all(as.character)
+  ecyp_db <- refresh_table(sheet_url)
 
-sheet_id <- googledrive::drive_get(id = sheet_url)$id
+  variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+  names(variable_list) <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
 
-# Delete a column
-ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
-
-## changing numeric column to character
-ecyp_db <- ecyp_db %>%
-  dplyr::mutate_all(as.character)
-
-variable_list <- names(ecyp_db)[-2]
-names(variable_list) <- names(ecyp_db)[-2]
+  basicPage(
+    # Have the user specify their ID number
+    textInput("enter_number", label = h4("Enter your number"), value = NULL),
+    # Have the user choose what variable from the table they want to change
+    selectInput("variable",
+      label = h4("Choose which field to update:"),
+      choices = variable_list,
+      selected = "---"
+    ),
+    textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
+    actionButton("submit", "Update Info", icon("fas fa-sync"))
+  )
+})
 ```
 
 ## Column
 
 ```{r}
-renderTable({
-  dplyr::filter(ecyp_db, Unique_Number == input$enter_number)
-})
-```
+# Set up the table to be rendered
+ecyp_update <- reactive({
+  if (!is.null(input$submit) && input$submit > 0) {
+    sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
-```{r}
-selectInput("variable", "Choose which field to update Info:", colnames(ecyp_db)[-2])
+    sheet_id <- get_sheet_id(sheet_url)
+    ecyp_db_org <- refresh_db(sheet_url)
+
+    ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), variable_choice()] <-
+      as.character(input$new_value)
+
+    ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
+
+    if (interactive()) {
+      googlesheets4::gs4_auth(
+        email = "cansav09@gmail.com",
+        path = NULL,
+        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
+        # Get new token if it doesn't exist
+        cache = ".",
+        use_oob = FALSE,
+        token = NULL
+      )
+    } else {
+      googlesheets4::gs4_auth(
+        email = "cansav09@gmail.com",
+        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
+        cache = "."
+      )
+    }
+    googlesheets4::sheet_write(
+      data = ecyp_db_org,
+      ss = sheet_id,
+      sheet = "Master Spreadsheet"
+    )
+
+    print("Refresh was run")
+
+    refresh_table(sheet_url) %>%
+      dplyr::filter(Unique_Number == enter_number())
+
+    shinyjs::reset("sidebar")
+  }
+  if (!is.null(enter_number())) {
+    refresh_table(sheet_url) %>%
+      dplyr::filter(Unique_Number == enter_number())
+  }
+})
 
 renderUI({
-  field_text <- names(variable_list)[[which(variable_list == input$variable)]]
-  basicPage(
-    textInput("new_value", label = h3("Enter the new value for ", field_text), placeholder = NULL), 
-    submitButton("Update Info", icon("fas fa-sync"))
-  )
-  
+  if (!is.null(input$submit)) {
+    tableOutput("ecyp_table")
+  }
+})
+
+DT::DTOutput("table")
+
+# Load the reactive values into data table
+output$table <- DT::renderDataTable({
+  ecyp_update()
 })
 ```
-
 
 
 ```{r}
-toListen <- reactive({
-  input$new_value
-})
+# If a new value is given, we want to put write it in the main googlesheet underneath the given variable name
+observeEvent(input$submit, {
+  if (!is.null(input$submit) && input$submit > 0) {
+    output$table <- DT::renderDT({
+      ecyp_update()
+    })
+    output$UI <- renderUI({
+      sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
-observeEvent(toListen(), {
+      ecyp_db <- refresh_table(sheet_url)
 
-  if (is.null(input$new_value)) {
-    return()
+      variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+      names(variable_list) <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+      basicPage(
+        # Have the user specify their ID number
+        textInput("enter_number", label = h4("Enter your number"), value = input$enter_number),
+        # Have the user choose what variable from the table they want to change
+        selectInput("variable",
+          label = h4("Choose which field to update:"),
+          choices = variable_list,
+          selected = input$variable
+        ),
+        textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
+        actionButton("submit", "Update Info", icon("fas fa-sync")),
+        h4(paste0("'", input$variable, "'", " was updated."))
+      )
+    })
   }
-    
-  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-
-  sheet_id <- googledrive::drive_get(id = sheet_url)$id
-
-  ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>% dplyr::mutate_all(as.character)
-  
-  # Delete a column
-  ecyp_db <- ecyp_db_org[-c(2, 13, 14, 18)]
-
-  ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), input$variable] <-
-    ecyp_db[which(ecyp_db$Unique_Number == input$enter_number), input$variable] <-
-    as.character(input$new_value)
-
-  ecyp_db_org[which(ecyp_db_org$Unique_Number == input$enter_number), ]$Last_Updated <- as.character(Sys.time())
-
-  googlesheets4::sheet_write(
-    data = ecyp_db_org,
-    ss = sheet_id,
-    sheet = "Master Spreadsheet"
-  )
-  
-  renderTable({
-    dplyr::filter(ecyp_db, Unique_Number == input$enter_number)
-  })
 })
 ```
-
-
