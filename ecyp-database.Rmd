@@ -7,6 +7,8 @@ output:
 runtime: shiny
 resource_files:
 - ecyp-database-key.json
+- .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
+- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
 ---
 
 ```{r}
@@ -147,8 +149,7 @@ ecyp_update <- reactive({
 
     ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
     
-    googledrive::drive_auth(path = "./ecyp-database-key.json")
-    googlesheets4::gs4_auth(path = "./ecyp-database-key.json")
+    googledrive::drive_auth(cache = ".secrets/", email = "cansav09@gmail.com")
     
     googlesheets4::sheet_write(
       data = ecyp_db_org,
