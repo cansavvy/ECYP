@@ -3,7 +3,6 @@ title: "ECYP Fellows and Alumni Database"
 output:
   flexdashboard::flex_dashboard:
     orientation: columns
-    social: menu
     source_code: embed
 runtime: shiny
 ---
@@ -130,7 +129,7 @@ output$UI <- renderUI({
     textInput("enter_number", label = h4("Enter your number"), value = NULL),
     # Have the user choose what variable from the table they want to change
     selectInput("variable",
-      label = h4("Choose which field to update Info:"),
+      label = h4("Choose which field to update:"),
       choices = variable_list, 
       selected = "---"
     ),
@@ -203,7 +202,7 @@ observeEvent(input$submit, {
         textInput("enter_number", label = h4("Enter your number"), value = input$enter_number),
         # Have the user choose what variable from the table they want to change
         selectInput("variable",
-          label = h4("Choose which field to update Info:"),
+          label = h4("Choose which field to update:"),
           choices = variable_list, 
           selected = input$variable
         ),
