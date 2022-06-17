@@ -6,14 +6,7 @@ output:
     source_code: embed
 runtime: shiny
 resource_files:
-- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
-- .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
-- .secrets/986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
-- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
-- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
-- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
-- 986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
-- 986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
+- ecyp-database-key.json
 ---
 
 ```{r}
@@ -153,25 +146,9 @@ ecyp_update <- reactive({
       as.character(input$new_value)
 
     ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
-
-    googlesheets4::gs4_deauth()
-
-    if (interactive()) {
-      googlesheets4::gs4_auth(
-        email = "cansav09@gmail.com",
-        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
-        path = "./ecyp-database-key.json",
-        use_oob = TRUE
-      )
-    } else {
-      googlesheets4::gs4_auth(
-        email = "cansav09@gmail.com",
-        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
-        cache = file.path(root_dir, ".secrets"),
-        use_oob = TRUE,
-        path = "./ecyp-database-key.json"
-      )
-    }
+    
+    googledrive::drive_auth(path = "./ecyp-database-key.json")
+    googlesheets4::gs4_auth(path = "./ecyp-database-key.json")
     
     googlesheets4::sheet_write(
       data = ecyp_db_org,
