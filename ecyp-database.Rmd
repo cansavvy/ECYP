@@ -45,7 +45,8 @@ library(shiny)
 input <- list(
   enter_number = NULL,
   variable = NULL,
-  new_value = NULL
+  new_value = NULL, 
+  submit = NULL
 )
 ```
 
@@ -136,7 +137,7 @@ variable_choice <- reactive({
 
 # This variable has the users' input for what the new value will be
 new_value <- reactive({
-  if (!is.null(input$submit)) {
+  if (input$submit == 1) {
     input$new_value
   }
 })
@@ -146,16 +147,15 @@ new_value <- reactive({
 
 ```{r, echo = F}
 # Set up the table to be rendered
-ecyp_updated <- reactive({
-  if (!is.null(input$submit)) {
+ecyp_update <- reactive({
+  if (input$submit > 0) {
     sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
     sheet_id <- get_sheet_id(sheet_url)
     ecyp_db_org <- refresh_db(sheet_url)
-    ecyp_db <- refresh_table(sheet_url)
 
     ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), variable_choice()] <-
-      as.character(new_value())
+      as.character(input$new_value)
 
     ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
 
@@ -164,16 +164,20 @@ ecyp_updated <- reactive({
       ss = sheet_id,
       sheet = "Master Spreadsheet"
     )
+    
     print("Refresh was run")
+    
+    refresh_table(sheet_url) %>%
+      dplyr::filter(Unique_Number == enter_number())    
   }
-  if (!is.null(enter_number()) || !is.null(input$submit)) {
+  if (!is.null(enter_number())) {
     refresh_table(sheet_url) %>%
       dplyr::filter(Unique_Number == enter_number())
   }
 })
 
 renderUI({
-  if (!is.null(input$submit)) {
+  if (input$submit > 0) {
     tableOutput("ecyp_table")
   }
 })
@@ -182,7 +186,7 @@ DT::DTOutput("table")
 
 # Load the reactive values into data table
 output$table <- DT::renderDataTable({
-  ecyp_updated()
+  ecyp_update()
 })
 ```
 
@@ -190,9 +194,11 @@ output$table <- DT::renderDataTable({
 ```{r}
 # If a new value is given, we want to put write it in the main googlesheet underneath the given variable name
 observeEvent(input$submit, {
-  output$table <- DT::renderDT({
-    ecyp_updated()
-  })
+  if (input$submit > 0) {
+    output$table <- DT::renderDT({
+      ecyp_update()
+    })
+  }
 })
 ```
 
