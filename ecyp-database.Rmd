@@ -45,7 +45,7 @@ library(shiny)
 input <- list(
   enter_number = NULL,
   variable = NULL,
-  new_value = NULL, 
+  new_value = NULL,
   submit = NULL
 )
 ```
@@ -83,14 +83,11 @@ refresh_table <- function(sheet_url) {
 ```
 
 ```{r}
-# Set up the data from the Googlesheet and store in global environment
-sheet_id <- get_sheet_id(sheet_url)
-ecyp_db_org <- refresh_db(sheet_url)
+# Set up the variable list based on this but don't show the user ID or Last Updated as options to edit
 ecyp_db <- refresh_table(sheet_url)
 
-# Set up the variable list based on this but don't show the user ID
 variable_list <- setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated"))
-names(variable_list) <- gsub("_", "", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+names(variable_list) <- gsub("_", " ", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
 ```
 
 Inputs {.sidebar}
@@ -99,20 +96,21 @@ Inputs {.sidebar}
 ```{r}
 ## Set up the user's input buttons
 
-# Have the user specify their ID number
-textInput("enter_number", label = h4("Enter your number"), value = NULL)
+uiOutput("UI")
 
-# Have the user choose what variable from the table they want to change
-selectInput("variable",
-  label = h4("Choose which field to update Info:"),
-  choices = variable_list,
-  selected = NULL
-)
 
 # Have the user write in the new value and click submit when they are done
-renderUI({
+output$UI <- renderUI({
   basicPage(
-    textInput("new_value", label = h4("Enter the new value for ", variable_choice()), value = NULL),
+    # Have the user specify their ID number
+    textInput("enter_number", label = h4("Enter your number"), value = NULL),
+    # Have the user choose what variable from the table they want to change
+    selectInput("variable",
+      label = h4("Choose which field to update Info:"),
+      choices = variable_list,
+      selected = NULL
+    ),
+    textInput("new_value", label = h4("Enter the new value for ", input$variable), value = NULL),
     actionButton("submit", "Update Info", icon("fas fa-sync"))
   )
 })
@@ -137,7 +135,7 @@ variable_choice <- reactive({
 
 # This variable has the users' input for what the new value will be
 new_value <- reactive({
-  if (input$submit == 1) {
+  if (input$submit > 0) {
     input$new_value
   }
 })
@@ -164,11 +162,13 @@ ecyp_update <- reactive({
       ss = sheet_id,
       sheet = "Master Spreadsheet"
     )
-    
+
     print("Refresh was run")
-    
+
     refresh_table(sheet_url) %>%
-      dplyr::filter(Unique_Number == enter_number())    
+      dplyr::filter(Unique_Number == enter_number())
+
+    shinyjs::reset("sidebar")
   }
   if (!is.null(enter_number())) {
     refresh_table(sheet_url) %>%
@@ -197,6 +197,21 @@ observeEvent(input$submit, {
   if (input$submit > 0) {
     output$table <- DT::renderDT({
       ecyp_update()
+    })
+    output$UI <- renderUI({
+      basicPage(
+        # Have the user specify their ID number
+        textInput("enter_number", label = h4("Enter your number"), value = input$enter_number),
+        # Have the user choose what variable from the table they want to change
+        selectInput("variable",
+          label = h4("Choose which field to update Info:"),
+          choices = variable_list,
+          selected = NULL
+        ),
+        textInput("new_value", label = h4("Enter the new value for ", input$variable), value = NULL),
+        actionButton("submit", "Update Info", icon("fas fa-sync")),
+        verbatimTextOutput(paste0("'", input$variable, "'", " was updated."))
+      )
     })
   }
 })
