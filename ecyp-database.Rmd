@@ -88,8 +88,8 @@ ecyp_db_org <- refresh_db(sheet_url)
 ecyp_db <- refresh_table(sheet_url)
 
 # Set up the variable list based on this but don't show the user ID
-variable_list <- names(ecyp_db)[-`Unique_Number`]
-names(variable_list) <- names(ecyp_db)[-`Unique_Number`]
+variable_list <- setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated"))
+names(variable_list) <- gsub("_", "", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
 ```
 
 Inputs {.sidebar}
