@@ -215,4 +215,3 @@ observeEvent(input$submit, {
   }
 })
 ```
-
