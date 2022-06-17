@@ -86,39 +86,12 @@ refresh_table <- function(sheet_url) {
 # Set up the variable list based on this but don't show the user ID or Last Updated as options to edit
 ecyp_db <- refresh_table(sheet_url)
 
-variable_list <- setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated"))
-names(variable_list) <- gsub("_", " ", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
-```
-
-Inputs {.sidebar}
------------------------------------------------------------------------
-
-```{r}
-## Set up the user's input buttons
-
-uiOutput("UI")
-
-
-# Have the user write in the new value and click submit when they are done
-output$UI <- renderUI({
-  basicPage(
-    # Have the user specify their ID number
-    textInput("enter_number", label = h4("Enter your number"), value = NULL),
-    # Have the user choose what variable from the table they want to change
-    selectInput("variable",
-      label = h4("Choose which field to update Info:"),
-      choices = variable_list,
-      selected = NULL
-    ),
-    textInput("new_value", label = h4("Enter the new value for ", input$variable), value = NULL),
-    actionButton("submit", "Update Info", icon("fas fa-sync"))
-  )
-})
+variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+names(variable_list) <-c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
 ```
 
 ```{r}
-# Set up inputs to be reactive
-
+# Set up inputs to be reactive functions
 # This variable has the user's input for what their ID is.
 enter_number <- reactive({
   if (!is.null(input$enter_number)) {
@@ -128,25 +101,51 @@ enter_number <- reactive({
 
 # This variable has the users' input for what variable they'd like to change
 variable_choice <- reactive({
-  if (!is.null(input$variable)) {
-    names(variable_list)[[which(variable_list == input$variable)]]
+  if (input$variable != "---") {
+    return(input$variable)
+  } else {
+    return("---")
   }
 })
 
 # This variable has the users' input for what the new value will be
 new_value <- reactive({
-  if (input$submit > 0) {
+  if (!is.null(input$submit) && input$submit > 0) {
     input$new_value
   }
 })
 ```
 
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+## Set up the user's input buttons
+uiOutput("UI")
+
+# Have the user write in the new value and click submit when they are done
+output$UI <- renderUI({
+  basicPage(
+    # Have the user specify their ID number
+    textInput("enter_number", label = h4("Enter your number"), value = NULL),
+    # Have the user choose what variable from the table they want to change
+    selectInput("variable",
+      label = h4("Choose which field to update Info:"),
+      choices = variable_list, 
+      selected = "---"
+    ),
+    textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
+    actionButton("submit", "Update Info", icon("fas fa-sync"))
+  )
+})
+```
+
 ## Column
 
-```{r, echo = F}
+```{r}
 # Set up the table to be rendered
 ecyp_update <- reactive({
-  if (input$submit > 0) {
+  if (!is.null(input$submit) && input$submit > 0) {
     sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
     sheet_id <- get_sheet_id(sheet_url)
@@ -177,7 +176,7 @@ ecyp_update <- reactive({
 })
 
 renderUI({
-  if (input$submit > 0) {
+  if (!is.null(input$submit)) {
     tableOutput("ecyp_table")
   }
 })
@@ -194,7 +193,7 @@ output$table <- DT::renderDataTable({
 ```{r}
 # If a new value is given, we want to put write it in the main googlesheet underneath the given variable name
 observeEvent(input$submit, {
-  if (input$submit > 0) {
+  if (!is.null(input$submit) && input$submit > 0) {
     output$table <- DT::renderDT({
       ecyp_update()
     })
@@ -205,12 +204,12 @@ observeEvent(input$submit, {
         # Have the user choose what variable from the table they want to change
         selectInput("variable",
           label = h4("Choose which field to update Info:"),
-          choices = variable_list,
-          selected = NULL
+          choices = variable_list, 
+          selected = input$variable
         ),
-        textInput("new_value", label = h4("Enter the new value for ", input$variable), value = NULL),
+        textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
         actionButton("submit", "Update Info", icon("fas fa-sync")),
-        verbatimTextOutput(paste0("'", input$variable, "'", " was updated."))
+        h4(paste0("'", input$variable, "'", " was updated."))
       )
     })
   }
