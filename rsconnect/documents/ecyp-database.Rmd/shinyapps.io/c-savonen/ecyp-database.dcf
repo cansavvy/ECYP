@@ -1,0 +1,13 @@
+name: ecyp-database
+title: ecyp-database
+username:
+account: c-savonen
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6507406
+bundleId: 6017912
+url: https://c-savonen.shinyapps.io/ecyp-database/
+when: 1655484774.38554
+lastSyncTime: 1655484774.38556
+asMultiple: FALSE
+asStatic: FALSE

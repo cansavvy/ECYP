@@ -50,17 +50,20 @@ input <- list(
 ```
 
 ```{r}
-# This is the hard-coded in url to the Alumni Master File that the data is kept in.
-sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-
 # This function gets the sheet_id from the url provided
 get_sheet_id <- function(sheet_url) {
+  # This is the hard-coded in url to the Alumni Master File that the data is kept in.
+  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
   sheet_id <- googledrive::drive_get(id = sheet_url)$id
   return(sheet_id)
 }
 
 # This function reads the googlesheet from online
 refresh_db <- function(sheet_url) {
+  # This is the hard-coded in url to the Alumni Master File that the data is kept in.
+  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
   # Read in sheet
   ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
     data.frame() %>%
@@ -71,6 +74,8 @@ refresh_db <- function(sheet_url) {
 
 # This function takes the googlesheet and sets up the table the user will see
 refresh_table <- function(sheet_url) {
+  # This is the hard-coded in url to the Alumni Master File that the data is kept in.
+  sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
   ecyp_db_org <- refresh_db(sheet_url)
 
   # Delete a column
@@ -79,14 +84,6 @@ refresh_table <- function(sheet_url) {
 
   return(ecyp_db)
 }
-```
-
-```{r}
-# Set up the variable list based on this but don't show the user ID or Last Updated as options to edit
-ecyp_db <- refresh_table(sheet_url)
-
-variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
-names(variable_list) <-c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
 ```
 
 ```{r}
@@ -124,13 +121,20 @@ uiOutput("UI")
 
 # Have the user write in the new value and click submit when they are done
 output$UI <- renderUI({
+    sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+  ecyp_db <- refresh_table(sheet_url)
+
+  variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+  names(variable_list) <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+
   basicPage(
     # Have the user specify their ID number
     textInput("enter_number", label = h4("Enter your number"), value = NULL),
     # Have the user choose what variable from the table they want to change
     selectInput("variable",
       label = h4("Choose which field to update:"),
-      choices = variable_list, 
+      choices = variable_list,
       selected = "---"
     ),
     textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
@@ -197,13 +201,19 @@ observeEvent(input$submit, {
       ecyp_update()
     })
     output$UI <- renderUI({
+      sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+      ecyp_db <- refresh_table(sheet_url)
+
+      variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+      names(variable_list) <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
       basicPage(
         # Have the user specify their ID number
         textInput("enter_number", label = h4("Enter your number"), value = input$enter_number),
         # Have the user choose what variable from the table they want to change
         selectInput("variable",
           label = h4("Choose which field to update:"),
-          choices = variable_list, 
+          choices = variable_list,
           selected = input$variable
         ),
         textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
