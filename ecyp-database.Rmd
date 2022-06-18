@@ -145,6 +145,7 @@ uiOutput("UI")
 output$UI <- renderUI({
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
+  authenticate()
   ecyp_db <- refresh_table(sheet_url)
 
   variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
@@ -202,6 +203,7 @@ ecyp_update <- reactive({
 
 renderUI({
   if (!is.null(input$submit)) {
+    authenticate()
     tableOutput("ecyp_table")
   }
 })
@@ -210,6 +212,7 @@ DT::DTOutput("table")
 
 # Load the reactive values into data table
 output$table <- DT::renderDataTable({
+  authenticate()
   ecyp_update()
 })
 ```
@@ -220,6 +223,7 @@ output$table <- DT::renderDataTable({
 observeEvent(input$submit, {
   if (!is.null(input$submit) && input$submit > 0) {
     output$table <- DT::renderDT({
+      authenticate()
       ecyp_update()
     })
     output$UI <- renderUI({
