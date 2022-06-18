@@ -153,7 +153,7 @@ ecyp_update <- reactive({
         path = NULL,
         scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
         # Get new token if it doesn't exist
-        cache = ".",
+        cache = ".secrets/",
         use_oob = FALSE,
         token = NULL
       )
@@ -161,7 +161,7 @@ ecyp_update <- reactive({
       googlesheets4::gs4_auth(
         email = "cansav09@gmail.com",
         scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
-        cache = "."
+        cache = ".secrets/"
       )
     }
     googlesheets4::sheet_write(
