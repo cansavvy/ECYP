@@ -7,12 +7,6 @@ output:
 runtime: shiny
 resource_files:
 - .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
-- .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
-- .secrets/986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
-- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
-- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
-- .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
-- 986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
 ---
 
 ```{r}
