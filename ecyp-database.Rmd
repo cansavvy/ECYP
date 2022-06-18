@@ -7,6 +7,8 @@ output:
 runtime: shiny
 resource_files:
 - .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
+- .secrets/986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
+- .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
 ---
 
 ```{r}
@@ -145,7 +147,6 @@ uiOutput("UI")
 output$UI <- renderUI({
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
-  authenticate()
   ecyp_db <- refresh_table(sheet_url)
 
   variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
@@ -173,7 +174,6 @@ output$UI <- renderUI({
 ecyp_update <- reactive({
   if (!is.null(input$submit) && input$submit > 0) {
     sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-    authenticate()
     sheet_id <- get_sheet_id(sheet_url)
     ecyp_db_org <- refresh_db(sheet_url)
 
@@ -182,6 +182,8 @@ ecyp_update <- reactive({
 
     ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
 
+    authenticate()
+    print("Writing to sheet")
     googlesheets4::sheet_write(
       data = ecyp_db_org,
       ss = sheet_id,
@@ -203,7 +205,6 @@ ecyp_update <- reactive({
 
 renderUI({
   if (!is.null(input$submit)) {
-    authenticate()
     tableOutput("ecyp_table")
   }
 })
@@ -212,7 +213,6 @@ DT::DTOutput("table")
 
 # Load the reactive values into data table
 output$table <- DT::renderDataTable({
-  authenticate()
   ecyp_update()
 })
 ```
@@ -223,12 +223,10 @@ output$table <- DT::renderDataTable({
 observeEvent(input$submit, {
   if (!is.null(input$submit) && input$submit > 0) {
     output$table <- DT::renderDT({
-      authenticate()
       ecyp_update()
     })
     output$UI <- renderUI({
       sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-      authenticate()
       ecyp_db <- refresh_table(sheet_url)
 
       variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
