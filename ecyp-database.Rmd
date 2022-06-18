@@ -24,6 +24,34 @@ library(magrittr)
 library(shiny)
 library(googlesheets4)
 library(googledrive)
+
+authenticate <- function() {
+  # designate project-specific cache
+  options(gargle_oauth_cache = ".secrets")
+
+  # check the value of the option, if you like
+  gargle::gargle_oauth_cache()
+
+  if (interactive()) {
+    googlesheets4::gs4_deauth()
+    googlesheets4::gs4_auth(
+      email = "cansav09@gmail.com",
+      path = NULL,
+      scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
+      # Get new token if it doesn't exist
+      cache = ".secrets/",
+      use_oob = FALSE,
+      token = NULL
+    )
+  } else {
+    googlesheets4::gs4_deauth()
+    googlesheets4::gs4_auth(
+      email = "cansav09@gmail.com",
+      scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
+      cache = ".secrets/"
+    )
+  }
+}
 ```
 
 ```{r input_demo, eval = FALSE}
@@ -43,6 +71,8 @@ get_sheet_id <- function(sheet_url) {
   # This is the hard-coded in url to the Alumni Master File that the data is kept in.
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
+  authenticate()
+
   sheet_id <- googledrive::drive_get(id = sheet_url)$id
   return(sheet_id)
 }
@@ -51,6 +81,8 @@ get_sheet_id <- function(sheet_url) {
 refresh_db <- function(sheet_url) {
   # This is the hard-coded in url to the Alumni Master File that the data is kept in.
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+  authenticate()
 
   # Read in sheet
   ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
@@ -64,6 +96,8 @@ refresh_db <- function(sheet_url) {
 refresh_table <- function(sheet_url) {
   # This is the hard-coded in url to the Alumni Master File that the data is kept in.
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+
+  authenticate()
   ecyp_db_org <- refresh_db(sheet_url)
 
   # Delete a column
@@ -138,7 +172,7 @@ output$UI <- renderUI({
 ecyp_update <- reactive({
   if (!is.null(input$submit) && input$submit > 0) {
     sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-
+    authenticate()
     sheet_id <- get_sheet_id(sheet_url)
     ecyp_db_org <- refresh_db(sheet_url)
 
@@ -147,23 +181,6 @@ ecyp_update <- reactive({
 
     ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
 
-    if (interactive()) {
-      googlesheets4::gs4_auth(
-        email = "cansav09@gmail.com",
-        path = NULL,
-        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
-        # Get new token if it doesn't exist
-        cache = ".secrets/",
-        use_oob = FALSE,
-        token = NULL
-      )
-    } else {
-      googlesheets4::gs4_auth(
-        email = "cansav09@gmail.com",
-        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
-        cache = ".secrets/"
-      )
-    }
     googlesheets4::sheet_write(
       data = ecyp_db_org,
       ss = sheet_id,
@@ -207,7 +224,7 @@ observeEvent(input$submit, {
     })
     output$UI <- renderUI({
       sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-
+      authenticate()
       ecyp_db <- refresh_table(sheet_url)
 
       variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
