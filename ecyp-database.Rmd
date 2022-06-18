@@ -7,6 +7,7 @@ output:
 runtime: shiny
 resource_files:
 - .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
+- update-googlesheet.R
 
 ---
 
@@ -54,6 +55,16 @@ input <- list(
 get_sheet_id <- function(sheet_url) {
   # This is the hard-coded in url to the Alumni Master File that the data is kept in.
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
+  
+    
+  googledrive::drive_auth(cache = gargle::gargle_oauth_cache(), email = TRUE)
+
+  googlesheets4::gs4_auth(
+    email = "cansav09@gmail.com",
+    scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
+    cache = gargle::gargle_oauth_cache(),
+    use_oob = TRUE
+  )
 
   sheet_id <- googledrive::drive_get(id = sheet_url)$id
   return(sheet_id)
@@ -149,31 +160,9 @@ output$UI <- renderUI({
 # Set up the table to be rendered
 ecyp_update <- reactive({
   if (!is.null(input$submit) && input$submit > 0) {
-    sheet_url <- "https://docs.google.com/spreadsheets/d/1glmt1ccNbdjFzWCEOK3nX8GeMAkxCU_R94MMslIEXAU/edit#gid=1665986408"
-
-    sheet_id <- get_sheet_id(sheet_url)
-    ecyp_db_org <- refresh_db(sheet_url)
-
-    ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), variable_choice()] <-
-      as.character(input$new_value)
-
-    ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
-
-    print(list.files())
-    googledrive::drive_auth(cache = gargle::gargle_oauth_cache(), email = TRUE)
-    gs4_auth(
-      email = "cansav09@gmail.com",
-      scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
-      cache = gargle::gargle_oauth_cache(),
-      use_oob = TRUE
-    )
-
-    sheet_write(
-      data = ecyp_db_org,
-      ss = sheet_id,
-      sheet = "Master Spreadsheet"
-    )
-
+    
+    system(paste("Rscript update-googlesheet.R --new_value", input$new_value))
+    
     print("Refresh was run")
 
     refresh_table(sheet_url) %>%
@@ -197,13 +186,6 @@ DT::DTOutput("table")
 
 # Load the reactive values into data table
 output$table <- DT::renderDataTable({
-  googledrive::drive_auth(cache = gargle::gargle_oauth_cache(), email = TRUE)
-  gs4_auth(
-    email = "cansav09@gmail.com",
-    scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
-    cache = gargle::gargle_oauth_cache(),
-    use_oob = TRUE
-  )
   ecyp_update()
 })
 ```
@@ -214,19 +196,10 @@ output$table <- DT::renderDataTable({
 observeEvent(input$submit, {
   if (!is.null(input$submit) && input$submit > 0) {
     output$table <- DT::renderDT({
-      googledrive::drive_auth(cache = gargle::gargle_oauth_cache(), email = TRUE)
-      library(googlesheets4)
-      gs4_auth(
-        email = "cansav09@gmail.com",
-        scopes = c("https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"),
-        cache = gargle::gargle_oauth_cache(),
-        use_oob = TRUE
-      )
       ecyp_update()
     })
     output$UI <- renderUI({
       sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-
       ecyp_db <- refresh_table(sheet_url)
 
       variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
