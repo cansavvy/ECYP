@@ -100,10 +100,15 @@ refresh_db <- function(sheet_url) {
   authenticate()
 
   # Read in sheet
-  ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
+  ecyp_db_org <- googlesheets4:: read_sheet(sheet_url) %>%
     data.frame() %>%
     dplyr::mutate_all(as.character)
 
+  unique_ids <- googlesheets4:: range_read_cells(
+    googledrive::drive_get(id = sheet_url),
+      range = "B1",
+      cell_data = "full")
+  
   return(ecyp_db_org)
 }
 
