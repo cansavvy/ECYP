@@ -11,6 +11,21 @@ resource_files:
 - .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
 ---
 
+<style>                     
+.navbar {
+  background-color:#481C59;
+  border-color:#F1E4EB;
+}
+.navbar-brand {
+color:white!important;
+}
+
+.sidebar{
+  background-color:#F1E4EB!important;
+}
+
+</style>
+
 ```{r}
 # Purpose of this Rmd is to host a Shiny app that allows alumni to use their unique ID to access their information in the
 # Alumni spreadsheet and be able to update that information
