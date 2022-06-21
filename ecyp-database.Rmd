@@ -165,7 +165,7 @@ output$UI <- renderUI({
       selected = "---"
     ),
     textInput("new_value", 
-              label = h4("Enter the new value for this variable:"), 
+              label = h4("Enter the information:"), 
               value = NULL),
     actionButton("submit", "Update Info", icon("fas fa-sync"))
   )
@@ -240,7 +240,7 @@ observeEvent(input$submit, {
           choices = variable_list,
           selected = NULL
         ),
-        textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
+        textInput("new_value", label = h4("Enter the information:"), value = NULL),
         actionButton("submit", "Update Info", icon("fas fa-sync")),
         h4(paste0("'", variable_changed, "'", " was updated."))
       )
