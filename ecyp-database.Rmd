@@ -12,7 +12,7 @@ resource_files:
 ---
 
 ```{r}
-# Purpose of this Rmd is to host a Shint app that allows alumni to use their unique ID to access their information in the
+# Purpose of this Rmd is to host a Shiny app that allows alumni to use their unique ID to access their information in the
 # Alumni spreadsheet and be able to update that information
 ```
 
@@ -150,18 +150,22 @@ output$UI <- renderUI({
   ecyp_db <- refresh_table(sheet_url)
 
   variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
-  names(variable_list) <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+  names(variable_list) <- variable_list
 
   basicPage(
     # Have the user specify their ID number
-    textInput("enter_number", label = h4("Enter your number"), value = NULL),
+    textInput("enter_number", 
+              label = h4("Enter your number"), 
+              value = NULL),
     # Have the user choose what variable from the table they want to change
     selectInput("variable",
       label = h4("Choose which field to update:"),
       choices = variable_list,
       selected = "---"
     ),
-    textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
+    textInput("new_value", 
+              label = h4("Enter the new value for this variable:"), 
+              value = NULL),
     actionButton("submit", "Update Info", icon("fas fa-sync"))
   )
 })
@@ -203,12 +207,6 @@ ecyp_update <- reactive({
   }
 })
 
-renderUI({
-  if (!is.null(input$submit)) {
-    tableOutput("ecyp_table")
-  }
-})
-
 DT::DTOutput("table")
 
 # Load the reactive values into data table
@@ -230,7 +228,7 @@ observeEvent(input$submit, {
       ecyp_db <- refresh_table(sheet_url)
 
       variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
-      names(variable_list) <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+      names(variable_list) <- variable_list
       basicPage(
         # Have the user specify their ID number
         textInput("enter_number", label = h4("Enter your number"), value = input$enter_number),
