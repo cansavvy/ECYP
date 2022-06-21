@@ -17,7 +17,14 @@ resource_files:
   border-color:#F1E4EB;
 }
 .navbar-brand {
-color:white!important;
+  color:white!important;
+  background: url('https://github.com/jhudsl/ottr-website/raw/main/resources/images/basic_otter_water.PNG') center / contain no-repeat;
+  width: 100%;
+  height: 100px;
+  position: absolute;
+  left: 0%;
+  margin-bottom: 200px;
+  margin-top: 40px;
 }
 
 .sidebar{
