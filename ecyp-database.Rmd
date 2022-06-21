@@ -145,6 +145,7 @@ uiOutput("UI")
 
 # Have the user write in the new value and click submit when they are done
 output$UI <- renderUI({
+  shinyjs::useShinyjs()
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
   ecyp_db <- refresh_table(sheet_url)
@@ -198,8 +199,6 @@ ecyp_update <- reactive({
 
     refresh_table(sheet_url) %>%
       dplyr::filter(Unique_Number == enter_number())
-
-    shinyjs::reset("sidebar")
   }
   if (!is.null(enter_number())) {
     refresh_table(sheet_url) %>%
@@ -220,10 +219,13 @@ output$table <- DT::renderDataTable({
 # If a new value is given, we want to put write it in the main googlesheet underneath the given variable name
 observeEvent(input$submit, {
   if (!is.null(input$submit) && input$submit > 0) {
+    shinyjs::reset("submit")
     output$table <- DT::renderDT({
       ecyp_update()
     })
+    variable_changed <- input$variable
     output$UI <- renderUI({
+      shinyjs::useShinyjs()
       sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
       ecyp_db <- refresh_table(sheet_url)
 
@@ -236,11 +238,11 @@ observeEvent(input$submit, {
         selectInput("variable",
           label = h4("Choose which field to update:"),
           choices = variable_list,
-          selected = input$variable
+          selected = NULL
         ),
         textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
         actionButton("submit", "Update Info", icon("fas fa-sync")),
-        h4(paste0("'", input$variable, "'", " was updated."))
+        h4(paste0("'", variable_changed, "'", " was updated."))
       )
     })
   }
