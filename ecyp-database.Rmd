@@ -1,5 +1,5 @@
 ---
-title: "ECYP Fellows and Alumni Database"
+title: "  ECYP Fellows and Alumni Database"
 output:
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -18,13 +18,10 @@ resource_files:
 }
 .navbar-brand {
   color:white!important;
-  background: url('https://github.com/cansavvy/ECYP/raw/main/ECYP-Logo.png') center / contain no-repeat;
+  background: url('https://github.com/cansavvy/ECYP/raw/main/ECYP-Logo.png') left / contain no-repeat;
   width: 100%;
-  height: 100px;
-  position: absolute;
-  left: 0%;
-  margin-bottom: 200px;
-  margin-top: 40px;
+  height: 50px;
+  padding: 5px;
 }
 
 .sidebar{
