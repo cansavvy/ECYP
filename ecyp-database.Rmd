@@ -11,17 +11,11 @@ resource_files:
 - .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
 ---
 
-<style>                     
+<style>      
+
 .navbar {
   background-color:#481C59;
   border-color:#F1E4EB;
-}
-.navbar-brand {
-  color:white!important;
-  background: url('https://github.com/cansavvy/ECYP/raw/main/ECYP-Logo.png') left / contain no-repeat;
-  width: 100%;
-  height: 50px;
-  padding: 5px;
 }
 
 .sidebar{
@@ -173,6 +167,9 @@ output$UI <- renderUI({
   names(variable_list) <- variable_list
 
   basicPage(
+    tags$img(src = 'https://github.com/cansavvy/ECYP/raw/main/ECYP-Logo.png', 
+             width = '80px', 
+             align = "center"),
     # Have the user specify their ID number
     textInput("enter_number", 
               label = h4("Enter your number"), 
