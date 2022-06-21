@@ -12,7 +12,7 @@ resource_files:
 ---
 
 ```{r}
-# Purpose of this Rmd is to host a Shint app that allows alumni to use their unique ID to access their information in the
+# Purpose of this Rmd is to host a Shiny app that allows alumni to use their unique ID to access their information in the
 # Alumni spreadsheet and be able to update that information
 ```
 
@@ -145,23 +145,28 @@ uiOutput("UI")
 
 # Have the user write in the new value and click submit when they are done
 output$UI <- renderUI({
+  shinyjs::useShinyjs()
   sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
 
   ecyp_db <- refresh_table(sheet_url)
 
   variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
-  names(variable_list) <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+  names(variable_list) <- variable_list
 
   basicPage(
     # Have the user specify their ID number
-    textInput("enter_number", label = h4("Enter your number"), value = NULL),
+    textInput("enter_number", 
+              label = h4("Enter your number"), 
+              value = NULL),
     # Have the user choose what variable from the table they want to change
     selectInput("variable",
       label = h4("Choose which field to update:"),
       choices = variable_list,
       selected = "---"
     ),
-    textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
+    textInput("new_value", 
+              label = h4("Enter the new value for this variable:"), 
+              value = NULL),
     actionButton("submit", "Update Info", icon("fas fa-sync"))
   )
 })
@@ -194,18 +199,10 @@ ecyp_update <- reactive({
 
     refresh_table(sheet_url) %>%
       dplyr::filter(Unique_Number == enter_number())
-
-    shinyjs::reset("sidebar")
   }
   if (!is.null(enter_number())) {
     refresh_table(sheet_url) %>%
       dplyr::filter(Unique_Number == enter_number())
-  }
-})
-
-renderUI({
-  if (!is.null(input$submit)) {
-    tableOutput("ecyp_table")
   }
 })
 
@@ -222,15 +219,18 @@ output$table <- DT::renderDataTable({
 # If a new value is given, we want to put write it in the main googlesheet underneath the given variable name
 observeEvent(input$submit, {
   if (!is.null(input$submit) && input$submit > 0) {
+    shinyjs::reset("submit")
     output$table <- DT::renderDT({
       ecyp_update()
     })
+    variable_changed <- input$variable
     output$UI <- renderUI({
+      shinyjs::useShinyjs()
       sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
       ecyp_db <- refresh_table(sheet_url)
 
       variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
-      names(variable_list) <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+      names(variable_list) <- variable_list
       basicPage(
         # Have the user specify their ID number
         textInput("enter_number", label = h4("Enter your number"), value = input$enter_number),
@@ -238,11 +238,11 @@ observeEvent(input$submit, {
         selectInput("variable",
           label = h4("Choose which field to update:"),
           choices = variable_list,
-          selected = input$variable
+          selected = NULL
         ),
         textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
         actionButton("submit", "Update Info", icon("fas fa-sync")),
-        h4(paste0("'", input$variable, "'", " was updated."))
+        h4(paste0("'", variable_changed, "'", " was updated."))
       )
     })
   }
