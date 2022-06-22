@@ -102,12 +102,7 @@ refresh_db <- function(sheet_url) {
   # Read in sheet
   ecyp_db_org <- googlesheets4:: read_sheet(sheet_url) %>%
     data.frame() %>%
-    dplyr::mutate_all(as.character)
-
-  unique_ids <- googlesheets4:: range_read_cells(
-    googledrive::drive_get(id = sheet_url),
-      range = "B1",
-      cell_data = "full")
+    dplyr::mutate_all(as.character) 
   
   return(ecyp_db_org)
 }
@@ -124,6 +119,8 @@ refresh_table <- function(sheet_url) {
   ecyp_db <- ecyp_db_org %>%
     dplyr::select(-Name_Original, -Notes)
 
+  names(ecyp_db) <- gsub("_|\\.|\\/", " ", names(ecyp_db))
+  
   return(ecyp_db)
 }
 ```
@@ -219,11 +216,11 @@ ecyp_update <- reactive({
     print("Refresh was run")
 
     refresh_table(sheet_url) %>%
-      dplyr::filter(Unique_Number == enter_number())
+      dplyr::filter(`Unique Number` == enter_number())
   }
   if (!is.null(enter_number())) {
     refresh_table(sheet_url) %>%
-      dplyr::filter(Unique_Number == enter_number())
+      dplyr::filter(`Unique Number` == enter_number())
   }
 })
 
