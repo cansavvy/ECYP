@@ -1,5 +1,5 @@
 ---
-title: "  ECYP Fellows and Alumni Database"
+title: "ECYP Fellows and Alumni Database"
 output:
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -117,7 +117,7 @@ refresh_table <- function(sheet_url) {
 
   # Delete a column
   ecyp_db <- ecyp_db_org %>%
-    dplyr::select(-`Name_Original`, -Notes)
+    dplyr::select(-Name_Original, -Notes)
 
   names(ecyp_db) <- gsub("_|\\.|\\/", " ", names(ecyp_db))
   
