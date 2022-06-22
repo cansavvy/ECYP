@@ -35,7 +35,7 @@ To add a new alumni's new `Unique_Number`:
 1. Right click to `Add a new row`. 
 2. Drag and copy the cell in row 2 (it should have an equation that looks like: 
 `=CONCATENATE(UPPER(LEFT(D2,2)), RANDBETWEEN(0,10000))`
-3. Click Enter. 
-4. In that same cell (or group of cells), right click to copy.
-5. Right click again and choose Paste special > paste values only. 
+3. Click enter and you should see the ID show up. 
+4. In that same cell (or group of cells), right click to copy (Or click `Crtl` + `C`).
+5. Right click again on the same cell and choose `Paste special` > `Values only` to save over the equation with the value of the ID number.
 6. You're all set.
