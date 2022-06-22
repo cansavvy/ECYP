@@ -216,11 +216,15 @@ ecyp_update <- reactive({
     print("Refresh was run")
 
     refresh_table(sheet_url) %>%
-      dplyr::filter(`Unique Number` == enter_number())
+      dplyr::filter(`Unique Number` == enter_number()) %>% 
+      t() %>% 
+      data.frame()
   }
   if (!is.null(enter_number())) {
     refresh_table(sheet_url) %>%
-      dplyr::filter(`Unique Number` == enter_number())
+      dplyr::filter(`Unique Number` == enter_number()) %>% 
+      t() %>% 
+      data.frame()
   }
 })
 
@@ -228,7 +232,7 @@ DT::DTOutput("table")
 
 # Load the reactive values into data table
 output$table <- DT::renderDataTable({
-  ecyp_update()
+  datatable(ecyp_update(), options = list(pageLength = 1000, dom = "t"))
 })
 ```
 
@@ -245,7 +249,9 @@ observeEvent(input$submit, {
     output$UI <- renderUI({
       shinyjs::useShinyjs()
       sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-      ecyp_db <- refresh_table(sheet_url)
+      ecyp_db <- refresh_table(sheet_url) %>%
+        t() %>% 
+        data.frame()
 
       variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
       names(variable_list) <- variable_list
