@@ -11,6 +11,19 @@ resource_files:
 - .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
 ---
 
+<style>      
+
+.navbar {
+  background-color:#481C59;
+  border-color:#F1E4EB;
+}
+
+.sidebar{
+  background-color:#F1E4EB!important;
+}
+
+</style>
+
 ```{r}
 # Purpose of this Rmd is to host a Shiny app that allows alumni to use their unique ID to access their information in the
 # Alumni spreadsheet and be able to update that information
@@ -87,10 +100,10 @@ refresh_db <- function(sheet_url) {
   authenticate()
 
   # Read in sheet
-  ecyp_db_org <- gsheet::gsheet2tbl(sheet_url) %>%
+  ecyp_db_org <- googlesheets4:: read_sheet(sheet_url) %>%
     data.frame() %>%
-    dplyr::mutate_all(as.character)
-
+    dplyr::mutate_all(as.character) 
+  
   return(ecyp_db_org)
 }
 
@@ -106,6 +119,8 @@ refresh_table <- function(sheet_url) {
   ecyp_db <- ecyp_db_org %>%
     dplyr::select(-Name_Original, -Notes)
 
+  names(ecyp_db) <- gsub("_|\\.|\\/", " ", names(ecyp_db))
+  
   return(ecyp_db)
 }
 ```
@@ -150,10 +165,13 @@ output$UI <- renderUI({
 
   ecyp_db <- refresh_table(sheet_url)
 
-  variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+  variable_list <- c("---", setdiff(names(ecyp_db), c("Unique Number", "Last Updated")))
   names(variable_list) <- variable_list
 
   basicPage(
+    tags$img(src = 'https://github.com/cansavvy/ECYP/raw/main/ECYP-Logo.png', 
+             width = '80px', 
+             align = "center"),
     # Have the user specify their ID number
     textInput("enter_number", 
               label = h4("Enter your number"), 
@@ -165,7 +183,7 @@ output$UI <- renderUI({
       selected = "---"
     ),
     textInput("new_value", 
-              label = h4("Enter the new value for this variable:"), 
+              label = h4("Enter the information:"), 
               value = NULL),
     actionButton("submit", "Update Info", icon("fas fa-sync"))
   )
@@ -182,7 +200,10 @@ ecyp_update <- reactive({
     sheet_id <- get_sheet_id(sheet_url)
     ecyp_db_org <- refresh_db(sheet_url)
 
-    ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), variable_choice()] <-
+      
+    variable_choice_fix <- gsub(" ", "_", variable_choice())
+    
+    ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), variable_choice_fix] <-
       as.character(input$new_value)
 
     ecyp_db_org[which(ecyp_db_org$Unique_Number == enter_number()), ]$Last_Updated <- as.character(Sys.time())
@@ -198,11 +219,15 @@ ecyp_update <- reactive({
     print("Refresh was run")
 
     refresh_table(sheet_url) %>%
-      dplyr::filter(Unique_Number == enter_number())
+      dplyr::filter(`Unique Number` == enter_number()) %>% 
+      t() %>% 
+      data.frame()
   }
   if (!is.null(enter_number())) {
     refresh_table(sheet_url) %>%
-      dplyr::filter(Unique_Number == enter_number())
+      dplyr::filter(`Unique Number` == enter_number()) %>% 
+      t() %>% 
+      data.frame()
   }
 })
 
@@ -210,7 +235,7 @@ DT::DTOutput("table")
 
 # Load the reactive values into data table
 output$table <- DT::renderDataTable({
-  ecyp_update()
+  datatable(ecyp_update(), options = list(pageLength = 1000, dom = "t"))
 })
 ```
 
@@ -221,15 +246,17 @@ observeEvent(input$submit, {
   if (!is.null(input$submit) && input$submit > 0) {
     shinyjs::reset("submit")
     output$table <- DT::renderDT({
-      ecyp_update()
+      datatable(ecyp_update(), options = list(pageLength = 1000, dom = "t"))
     })
     variable_changed <- input$variable
     output$UI <- renderUI({
       shinyjs::useShinyjs()
       sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-      ecyp_db <- refresh_table(sheet_url)
+      ecyp_db <- refresh_table(sheet_url) %>%
+        t() %>% 
+        data.frame()
 
-      variable_list <- c("---", setdiff(names(ecyp_db), c("Unique_Number", "Last_Updated")))
+      variable_list <- c("---", setdiff(names(ecyp_db), c("Unique Number", "Last Updated")))
       names(variable_list) <- variable_list
       basicPage(
         # Have the user specify their ID number
@@ -240,7 +267,7 @@ observeEvent(input$submit, {
           choices = variable_list,
           selected = NULL
         ),
-        textInput("new_value", label = h4("Enter the new value for this variable:"), value = NULL),
+        textInput("new_value", label = h4("Enter the information:"), value = NULL),
         actionButton("submit", "Update Info", icon("fas fa-sync")),
         h4(paste0("'", variable_changed, "'", " was updated."))
       )
