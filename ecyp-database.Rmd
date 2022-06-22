@@ -252,12 +252,16 @@ observeEvent(input$submit, {
     output$UI <- renderUI({
       shinyjs::useShinyjs()
       sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
-      ecyp_db <- refresh_table(sheet_url) %>%
-        t() %>% 
-        data.frame()
+      ecyp_db <- refresh_table(sheet_url)
 
       variable_list <- c("---", setdiff(names(ecyp_db), c("Unique Number", "Last Updated")))
       names(variable_list) <- variable_list
+      
+      # Transpose it 
+      ecyp_db <- ecyp_db %>% 
+        t() %>% 
+        data.frame()
+      
       basicPage(
         # Have the user specify their ID number
         textInput("enter_number", label = h4("Enter your number"), value = input$enter_number),
