@@ -1,5 +1,5 @@
 ---
-title: "ECYP Fellows and Alumni Database"
+title: "ECYP Alumni Database"
 output:
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -9,6 +9,7 @@ resource_files:
 - .secrets/9566fe0643cfe888fecd0b72f870afec_cansav09@gmail.com
 - .secrets/986a84aaed0662458cd8a3e0959a8fc7_cansav09@gmail.com
 - .secrets/20061abcbc1c6ecf51bd9cf7e37350f6_cansav09@gmail.com
+- README.md
 ---
 
 <style>      
@@ -102,7 +103,12 @@ refresh_db <- function(sheet_url) {
   # Read in sheet
   ecyp_db_org <- googlesheets4:: read_sheet(sheet_url) %>%
     data.frame() %>%
-    dplyr::mutate_all(as.character) 
+    dplyr::mutate_all(as.character)
+  
+  if('X...' %in% colnames(ecyp_db_org)) { 
+    ecyp_db_org <- ecyp_db_org %>% 
+      dplyr::select(-X...)
+    }
   
   return(ecyp_db_org)
 }
@@ -198,8 +204,7 @@ ecyp_update <- reactive({
   if (!is.null(input$submit) && input$submit > 0) {
     sheet_url <- "https://docs.google.com/spreadsheets/d/1rQaqQIYLZw1tZnJZQHMNhTf0-zDRH2zWzA6Eo0giP80/edit#gid=1665986408"
     sheet_id <- get_sheet_id(sheet_url)
-    ecyp_db_org <- refresh_db(sheet_url)
-
+    ecyp_db_org <- refresh_db(sheet_url) 
       
     variable_choice_fix <- gsub(" ", "_", variable_choice())
     
